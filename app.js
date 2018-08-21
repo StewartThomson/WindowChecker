@@ -51,7 +51,7 @@ app.use(function(err, req, res, next) {
 
 let hp = ref.alloc('float');
 let tp = ref.alloc('float');
-console.log(thermostatLib.pi_dht_read(22,4, hp, tp));
+console.log(thermostatLib.pi_dht_read(22, 4, hp, tp));
 console.log("Temp: " + tp.deref() + "\nHumidity: " + hp.deref());
 
 
@@ -60,12 +60,18 @@ let windowsOpen = false;
 setInterval(() => {
   let humidityPtr = ref.alloc('float');
   let tempPtr = ref.alloc('float');
-  console.log(thermostatLib.pi_dht_read(22, 23, humidityPtr, tempPtr));
+  let result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
+  while(result != 0){
+    console.log(result);
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
+    result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
+  }
+  console.log(result);
   let indoorHumidity = humidityPtr.deref();
   let indoorTemp = tempPtr.deref();
 
   let outdoorTemp;
-  let outdoorHumdity;
+  let outdoorHumidity;
   let windSpeed;
   let error = false;
   request('http://api.openweathermap.org/data/2.5/weather?id=5967629&units=metric&APPID=a170393ea0ca150f33084c7b01975529', (err, res, body) => {
@@ -73,58 +79,60 @@ setInterval(() => {
       error = true;
       return;
     }
+    body = JSON.parse(body);
     outdoorTemp = body.main.temp;
-    outdoorHumdity = body.main.humidity;
+    outdoorHumidity = body.main.humidity;
     windSpeed = body.wind.speed;
+
+    // https://en.wikipedia.org/wiki/Wind_chill#North_American_and_United_Kingdom_wind_chill_index
+    let indoorAT;
+    let outdoorAT;
+
+    let indoorE = (indoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * indoorTemp) / (237.7 + indoorTemp)));
+    let outdoorE = (outdoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * outdoorTemp) / (237.7 + outdoorTemp)));
+
+    indoorAT = indoorTemp + (0.33 * indoorE) - 4;
+    outdoorAT = outdoorTemp + (0.33 * outdoorE) - (0.7 * windSpeed) - 4;
+    indoorAT = indoorAT.toFixed(2);
+    outdoorAT = outdoorAT.toFixed(2);
+    outdoorTemp = outdoorTemp.toFixed(2);
+    indoorTemp = indoorTemp.toFixed(2);
+    if(!winterMode){
+      if(indoorAT > outdoorAT && windowsOpen == false){
+        //open
+        pusher.note({}, 'Open the windows!', `Outdoor actual temp: ${outdoorTemp}
+        Outdoor feels like: ${outdoorAT}
+        Indoor actual temp: ${indoorTemp}
+        Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+        windowsOpen = true;
+      }
+      if(indoorAT < outdoorAT && windowsOpen == true){
+        //close
+        pusher.note({}, 'Close the windows!', `Outdoor actual temp: ${outdoorTemp}
+        Outdoor feels like: ${outdoorAT}
+        Indoor actual temp: ${indoorTemp}
+        Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+        windowsOpen = false;
+      }
+    }else{
+      if(indoorAT < outdoorAT && windowsOpen == false){
+        //open
+        pusher.note({}, 'Open the windows!', `Outdoor actual temp: ${outdoorTemp}
+        Outdoor feels like: ${outdoorAT}
+        Indoor actual temp: ${indoorTemp}
+        Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+        windowsOpen = true;
+      }
+      if(indoorAT > outdoorAT && windowsOpen == true){
+        //close
+        pusher.note({}, 'Close the windows!', `Outdoor actual temp: ${outdoorTemp}
+        Outdoor feels like: ${outdoorAT}
+        Indoor actual temp: ${indoorTemp}
+        Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+        windowsOpen = false;
+      }
+    }
   });
-  if(error){
-    return;
-  }
-
-  // https://en.wikipedia.org/wiki/Wind_chill#North_American_and_United_Kingdom_wind_chill_index
-  let indoorAT;
-  let outdoorAT;
-
-  let indoorE = (indoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * indoorTemp) / (237.7 + indoorTemp)));
-  let outdoorE = (outdoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * outdoorTemp) / (237.7 + outdoorTemp)));
-
-  indoorAT = indoorTemp + (0.33 * indoorE) - 4;
-  outdoorAT = outdoorTemp + (0.33 * outdoorE) - (0.7 * windSpeed) - 4;
-  if(!winterMode){
-    if(indoorAT > outdoorAT && windowsOpen == false){
-      //open
-      pusher.note({}, 'Open the windows!', `Outdoor actual temp: ${outdoorTemp}
-      Outdoor feels like: ${outdoorAT}
-      Indoor actual temp: ${indoorTemp}
-      Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
-      windowsOpen = true;
-    }
-    if(indoorAT < outdoorAT && windowsOpen == true){
-      //close
-      pusher.note({}, 'Close the windows!', `Outdoor actual temp: ${outdoorTemp}
-      Outdoor feels like: ${outdoorAT}
-      Indoor actual temp: ${indoorTemp}
-      Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
-      windowsOpen = false;
-    }
-  }else{
-    if(indoorAT < outdoorAT && windowsOpen == false){
-      //open
-      pusher.note({}, 'Open the windows!', `Outdoor actual temp: ${outdoorTemp}
-      Outdoor feels like: ${outdoorAT}
-      Indoor actual temp: ${indoorTemp}
-      Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
-      windowsOpen = true;
-    }
-    if(indoorAT > outdoorAT && windowsOpen == true){
-      //close
-      pusher.note({}, 'Close the windows!', `Outdoor actual temp: ${outdoorTemp}
-      Outdoor feels like: ${outdoorAT}
-      Indoor actual temp: ${indoorTemp}
-      Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
-      windowsOpen = false;
-    }
-  }
 }, 900000);
 
 module.exports = app;

@@ -1,0 +1,28 @@
+
+> windowtemp@0.0.0 start /home/WindowChecker
+> node ./bin/www
+
+0
+Temp: 27.600000381469727
+Humidity: 52.400001525878906
+-1
+/home/WindowChecker/app.js:89
+  let outdoorE = (outdoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * outdoorTemp) / (237.7 + outdoorTemp)));
+                 ^
+
+ReferenceError: outdoorHumidity is not defined
+    at Timeout.setInterval [as _onTimeout] (/home/WindowChecker/app.js:89:18)
+    at ontimeout (timers.js:424:11)
+    at tryOnTimeout (timers.js:288:5)
+    at listOnTimeout (timers.js:251:5)
+    at Timer.processTimers (timers.js:211:10)
+npm ERR! code ELIFECYCLE
+npm ERR! errno 1
+npm ERR! windowtemp@0.0.0 start: `node ./bin/www`
+npm ERR! Exit status 1
+npm ERR! 
+npm ERR! Failed at the windowtemp@0.0.0 start script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /root/.npm/_logs/2018-08-21T02_10_33_559Z-debug.log
