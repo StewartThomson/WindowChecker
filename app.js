@@ -49,6 +49,12 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+let hp = ref.alloc('float');
+let tp = ref.alloc('float');
+console.log(thermostatLib.pi_dht_read(22,4, hp, tp));
+console.log("Temp: " + tp.deref() + "\nHumidity: " + hp.deref());
+
+
 let winterMode = false;
 let windowsOpen = false;
 setInterval(() => {
@@ -91,6 +97,7 @@ setInterval(() => {
       Outdoor feels like: ${outdoorAT}
       Indoor actual temp: ${indoorTemp}
       Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+      windowsOpen = true;
     }
     if(indoorAT < outdoorAT && windowsOpen == true){
       //close
@@ -98,6 +105,7 @@ setInterval(() => {
       Outdoor feels like: ${outdoorAT}
       Indoor actual temp: ${indoorTemp}
       Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+      windowsOpen = false;
     }
   }else{
     if(indoorAT < outdoorAT && windowsOpen == false){
@@ -106,6 +114,7 @@ setInterval(() => {
       Outdoor feels like: ${outdoorAT}
       Indoor actual temp: ${indoorTemp}
       Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+      windowsOpen = true;
     }
     if(indoorAT > outdoorAT && windowsOpen == true){
       //close
@@ -113,6 +122,7 @@ setInterval(() => {
       Outdoor feels like: ${outdoorAT}
       Indoor actual temp: ${indoorTemp}
       Indoor feels like: ${indoorAT}`, (err, res) => {if(err) console.log(err); if(res) console.log(res)});
+      windowsOpen = false;
     }
   }
 }, 900000);
