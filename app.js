@@ -43,48 +43,50 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-let GetTempData = new Promise(async (resolve, reject) => {
-  let humidityPtr = ref.alloc('float');
-  let tempPtr = ref.alloc('float');
-  let result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
-  while(result != 0){
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
-    result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
-  }
-  let indoorHumidity = humidityPtr.deref();
-  let indoorTemp = tempPtr.deref();
+function GetTempData(){
+  return new Promise(async (resolve, reject) => {
+    let humidityPtr = ref.alloc('float');
+    let tempPtr = ref.alloc('float');
+    let result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
+    /*while(result != 0){
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
+      result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
+    }*/
+    let indoorHumidity = humidityPtr.deref();
+    let indoorTemp = tempPtr.deref();
 
-  let outdoorTemp;
-  let outdoorHumidity;
-  let windSpeed;
-  let error = false;
-  let tempInfo = new Object();
-  await request('http://api.openweathermap.org/data/2.5/weather?id=5967629&units=metric&APPID=a170393ea0ca150f33084c7b01975529', (err, res, body) => {
-    if(err){
-      reject(err);
-      return;
-    }
-    body = JSON.parse(body);
-    outdoorTemp = body.main.temp;
-    outdoorHumidity = body.main.humidity;
-    windSpeed = body.wind.speed;
+    let outdoorTemp;
+    let outdoorHumidity;
+    let windSpeed;
+    let error = false;
+    let tempInfo = new Object();
+    await request('http://api.openweathermap.org/data/2.5/weather?id=5967629&units=metric&APPID=a170393ea0ca150f33084c7b01975529', (err, res, body) => {
+      if(err){
+        reject(err);
+        return;
+      }
+      body = JSON.parse(body);
+      outdoorTemp = body.main.temp;
+      outdoorHumidity = body.main.humidity;
+      windSpeed = body.wind.speed;
 
-    // https://en.wikipedia.org/wiki/Wind_chill#North_American_and_United_Kingdom_wind_chill_index
-    let indoorAT;
-    let outdoorAT;
+      // https://en.wikipedia.org/wiki/Wind_chill#North_American_and_United_Kingdom_wind_chill_index
+      let indoorAT;
+      let outdoorAT;
 
-    let indoorE = (indoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * indoorTemp) / (237.7 + indoorTemp)));
-    let outdoorE = (outdoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * outdoorTemp) / (237.7 + outdoorTemp)));
+      let indoorE = (indoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * indoorTemp) / (237.7 + indoorTemp)));
+      let outdoorE = (outdoorHumidity / 100) * 6.105 * Math.pow(Math.E, ((17.17 * outdoorTemp) / (237.7 + outdoorTemp)));
 
-    indoorAT = indoorTemp + (0.33 * indoorE) - 4;
-    outdoorAT = outdoorTemp + (0.33 * outdoorE) - (0.7 * windSpeed) - 4;
-    tempInfo.indoorAT = indoorAT.toFixed(2);
-    tempInfo.outdoorAT = outdoorAT.toFixed(2);
-    tempInfo.outdoorTemp = outdoorTemp.toFixed(2);
-    tempInfo.indoorTemp = indoorTemp.toFixed(2);
-    resolve(tempInfo);
+      indoorAT = indoorTemp + (0.33 * indoorE) - 4;
+      outdoorAT = outdoorTemp + (0.33 * outdoorE) - (0.7 * windSpeed) - 4;
+      tempInfo.indoorAT = indoorAT.toFixed(2);
+      tempInfo.outdoorAT = outdoorAT.toFixed(2);
+      tempInfo.outdoorTemp = outdoorTemp.toFixed(2);
+      tempInfo.indoorTemp = indoorTemp.toFixed(2);
+      resolve(tempInfo);
+    });
   });
-});
+}
 
 module.exports = GetTempData;
 
@@ -100,7 +102,8 @@ app.use(function(req, res, next) {
 let winterMode = false;
 let windowsOpen = false;
 setInterval(() => {
-  GetTempData.then((tempData) => {
+  console.log("interval");
+  GetTempData().then((tempData) => {
     let indoorAT = tempData.indoorAT;
     let outdoorAT = tempData.outdoorAT;
     let indoorTemp = tempData.indoorTemp;
