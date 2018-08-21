@@ -4,9 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-
 var ref = require("ref");
 var ffi = require("ffi");
 var request = require('request');
@@ -30,13 +27,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+
 
 // error handler
 app.use(function(err, req, res, next) {
@@ -49,24 +43,14 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-let hp = ref.alloc('float');
-let tp = ref.alloc('float');
-console.log(thermostatLib.pi_dht_read(22, 4, hp, tp));
-console.log("Temp: " + tp.deref() + "\nHumidity: " + hp.deref());
-
-
-let winterMode = false;
-let windowsOpen = false;
-setInterval(() => {
+let GetTempData = new Promise(async (resolve, reject) => {
   let humidityPtr = ref.alloc('float');
   let tempPtr = ref.alloc('float');
   let result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
   while(result != 0){
-    console.log(result);
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
     result = thermostatLib.pi_dht_read(22, 4, humidityPtr, tempPtr);
   }
-  console.log(result);
   let indoorHumidity = humidityPtr.deref();
   let indoorTemp = tempPtr.deref();
 
@@ -74,9 +58,10 @@ setInterval(() => {
   let outdoorHumidity;
   let windSpeed;
   let error = false;
-  request('http://api.openweathermap.org/data/2.5/weather?id=5967629&units=metric&APPID=a170393ea0ca150f33084c7b01975529', (err, res, body) => {
+  let tempInfo = new Object();
+  await request('http://api.openweathermap.org/data/2.5/weather?id=5967629&units=metric&APPID=a170393ea0ca150f33084c7b01975529', (err, res, body) => {
     if(err){
-      error = true;
+      reject(err);
       return;
     }
     body = JSON.parse(body);
@@ -93,10 +78,29 @@ setInterval(() => {
 
     indoorAT = indoorTemp + (0.33 * indoorE) - 4;
     outdoorAT = outdoorTemp + (0.33 * outdoorE) - (0.7 * windSpeed) - 4;
-    indoorAT = indoorAT.toFixed(2);
-    outdoorAT = outdoorAT.toFixed(2);
-    outdoorTemp = outdoorTemp.toFixed(2);
-    indoorTemp = indoorTemp.toFixed(2);
+    tempInfo.indoorAT = indoorAT.toFixed(2);
+    tempInfo.outdoorAT = outdoorAT.toFixed(2);
+    tempInfo.outdoorTemp = outdoorTemp.toFixed(2);
+    tempInfo.indoorTemp = indoorTemp.toFixed(2);
+    resolve(tempInfo);
+  });
+});
+
+module.exports = GetTempData;
+
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
+app.use(function(req, res, next) {
+  next(createError(404));
+});
+
+let winterMode = false;
+let windowsOpen = false;
+setInterval(() => {
+  GetTempData().then((tempData) => {
     if(!winterMode){
       if(indoorAT > outdoorAT && windowsOpen == false){
         //open
@@ -132,7 +136,6 @@ setInterval(() => {
         windowsOpen = false;
       }
     }
-  });
-}, 900000);
-
+  }).catch();
+}, 15000);
 module.exports = app;
