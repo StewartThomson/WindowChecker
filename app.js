@@ -100,7 +100,11 @@ app.use(function(req, res, next) {
 let winterMode = false;
 let windowsOpen = false;
 setInterval(() => {
-  GetTempData().then((tempData) => {
+  GetTempData.then((tempData) => {
+    let indoorAT = tempData.indoorAT;
+    let outdoorAT = tempData.outdoorAT;
+    let indoorTemp = tempData.indoorTemp;
+    let outdoorTemp = tempData.outdoorTemp;
     if(!winterMode){
       if(indoorAT > outdoorAT && windowsOpen == false){
         //open
@@ -137,5 +141,5 @@ setInterval(() => {
       }
     }
   }).catch();
-}, 15000);
+}, 900000);
 module.exports = app;

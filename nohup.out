@@ -26,3 +26,121 @@ npm ERR! This is probably not a problem with npm. There is likely additional log
 
 npm ERR! A complete log of this run can be found in:
 npm ERR!     /root/.npm/_logs/2018-08-21T02_10_33_559Z-debug.log
+
+> windowtemp@0.0.0 start /home/WindowChecker
+> node ./bin/www
+
+0
+Temp: 25.600000381469727
+Humidity: 54
+-2
+0
+{ active: true,
+  iden: 'ujAahqTNrIOsjAft934bBI',
+  created: 1534854495.7291646,
+  modified: 1534854495.7400346,
+  type: 'note',
+  dismissed: false,
+  direction: 'self',
+  sender_iden: 'ujAahqTNrIO',
+  sender_email: 'stewartthomson3@gmail.com',
+  sender_email_normalized: 'stewartthomson3@gmail.com',
+  sender_name: 'Stewart Thomson',
+  receiver_iden: 'ujAahqTNrIO',
+  receiver_email: 'stewartthomson3@gmail.com',
+  receiver_email_normalized: 'stewartthomson3@gmail.com',
+  title: 'Open the windows!',
+  body:
+   'Outdoor actual temp: 19.03\n        Outdoor feels like: 19.10\n        Indoor actual temp: 25.70\n        Indoor feels like: 27.82' }
+0
+-1
+0
+
+> windowtemp@0.0.0 start /home/WindowChecker
+> node ./bin/www
+
+-2
+Temp: 0
+Humidity: 0
+-2
+-1
+-2
+-2
+0
+{ active: true,
+  iden: 'ujAahqTNrIOsjzWN2ncDhA',
+  created: 1534865067.9737425,
+  modified: 1534865067.9932783,
+  type: 'note',
+  dismissed: false,
+  direction: 'self',
+  sender_iden: 'ujAahqTNrIO',
+  sender_email: 'stewartthomson3@gmail.com',
+  sender_email_normalized: 'stewartthomson3@gmail.com',
+  sender_name: 'Stewart Thomson',
+  receiver_iden: 'ujAahqTNrIO',
+  receiver_email: 'stewartthomson3@gmail.com',
+  receiver_email_normalized: 'stewartthomson3@gmail.com',
+  title: 'Open the windows!',
+  body:
+   'Outdoor actual temp: 19.13\n        Outdoor feels like: 18.16\n        Indoor actual temp: 25.50\n        Indoor feels like: 28.23' }
+0
+-2
+0
+-2
+0
+0
+0
+0
+0
+0
+0
+0
+0
+[0mGET / [32m200 [0m9088.901 ms - 170[0m
+[0mGET /stylesheets/style.css [32m200 [0m333.384 ms - 111[0m
+[0mGET /favicon.ico [33m404 [0m663.386 ms - 1012[0m
+-2
+-1
+-2
+0
+0
+-1
+0
+-2
+0
+Killed
+npm ERR! code ELIFECYCLE
+npm ERR! errno 137
+npm ERR! windowtemp@0.0.0 start: `node ./bin/www`
+npm ERR! Exit status 137
+npm ERR! 
+npm ERR! Failed at the windowtemp@0.0.0 start script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /root/.npm/_logs/2018-08-21T19_12_22_575Z-debug.log
+
+> windowtemp@0.0.0 start /home/WindowChecker
+> node ./bin/www
+
+/home/WindowChecker/app.js:103
+  GetTempData().then((tempData) => {
+  ^
+
+TypeError: GetTempData is not a function
+    at Timeout.setInterval [as _onTimeout] (/home/WindowChecker/app.js:103:3)
+    at ontimeout (timers.js:424:11)
+    at tryOnTimeout (timers.js:288:5)
+    at listOnTimeout (timers.js:251:5)
+    at Timer.processTimers (timers.js:211:10)
+npm ERR! code ELIFECYCLE
+npm ERR! errno 1
+npm ERR! windowtemp@0.0.0 start: `node ./bin/www`
+npm ERR! Exit status 1
+npm ERR! 
+npm ERR! Failed at the windowtemp@0.0.0 start script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /root/.npm/_logs/2018-08-21T19_13_11_570Z-debug.log
